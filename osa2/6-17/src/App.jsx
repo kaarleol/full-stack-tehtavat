@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import personService from './services/persons'
 
-const Persons = ({persons, searchValue}) => {
+const Persons = ({persons, searchValue, deletePerson}) => {
   return (
     <div>
       {persons.map(person => 
         person.name.toLowerCase().includes(searchValue.toLowerCase()) 
         ?
-        <Person key={person.name} name={person.name} number={person.number}/> 
+          <Person key={person.id} name={person.name} number={person.number} id={person.id} deletePerson={deletePerson} />
         :
         ''
         )}
@@ -15,9 +15,9 @@ const Persons = ({persons, searchValue}) => {
   )
 }
 
-const Person = ({name, number}) => {
+const Person = ({name, number, id, deletePerson}) => {
   return (
-    <p>{name} {number}</p>
+    <p>{name} {number} <button onClick={() => deletePerson(id)}>delete</button>  </p>
   )
 }
 
@@ -41,41 +41,28 @@ const Filter = ({handleSearchChange, searchValue}) => {
 }
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456' },
-    { name: 'Ada Lovelace', number: '39-44-5323523' },
-    { name: 'Dan Abramov', number: '12-43-234345' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122' }
-  ]) 
+  const [persons, setPersons] = useState([]) 
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchValue, setSeachValue] = useState('')
 
-  const hook = () => {
-    console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log('promise fulfilled')
-        setPersons(response.data)
+  useEffect(() => {
+    personService
+      .getAll()
+        .then(initialPersons => {
+        setPersons(initialPersons)
       })
-  }
-  
-  useEffect(hook, [])
-  console.log('render', persons.length, 'persons')
+  }, [])
 
   const handleNameChange = (event) => {
-    console.log(event.target.value)
     setNewName(event.target.value)
   }
 
   const handleNumberChange = (event) => {
-    console.log(event.target.value)
     setNewNumber(event.target.value)
   }
 
   const handleSeachChange = (event) => {
-    console.log(event.target.value)
     setSeachValue(event.target.value)
   }
 
@@ -86,12 +73,45 @@ const App = () => {
       number: newNumber
     }
     if (persons.map(person => person.name).includes(newName)) {
-      alert(`${newName} is already added to phonebook`)
+      if (confirm(`${newName} is already added to phonebook, replace the old number with new one?`)){
+        const personId = persons.find(person => person.name === newName).id
+
+        personService.update(personId, personObject)
+        .then(response => {
+          setPersons(persons.map(person => person.id != personId ? person : response ))
+          setNewName('')
+          setNewNumber('')
+        })
+        .catch(error => {
+          alert(
+            `${newName} was already deleted from server`
+          )
+          setPersons(persons.filter(person => person.id !== id))
+        })
+      }
     }
     else {
-      setPersons(persons.concat(personObject))
+      personService.create(personObject)
+      .then(response => {
+        setPersons(persons.concat(response))
+        console.log(response)}
+        )
       setNewName('')
       setNewNumber('')
+    }
+  }
+  
+  const deletePersonWithId = id => {
+    const person = persons.find(person => person.id === id )
+    const personName = person.name
+    if (confirm(`delete ${personName}?`)){
+      personService.deletePerson(id).then(
+        response => {
+          console.log(response)
+          const newPersons = persons.filter(person => person.id != response.id)
+          setPersons(newPersons)
+        }
+      )
     }
   }
 
@@ -103,7 +123,7 @@ const App = () => {
         addNewPerson={addNewPerson} newName={newName} handleNameChange={handleNameChange} newNumber={newNumber} handleNumberChange={handleNumberChange} 
       />
       <h3>Numbers</h3>
-      <Persons persons={persons} searchValue={searchValue} />
+      <Persons persons={persons} searchValue={searchValue} deletePerson={deletePersonWithId} />
     </div>
   )
 
