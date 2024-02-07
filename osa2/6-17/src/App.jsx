@@ -40,11 +40,35 @@ const Filter = ({handleSearchChange, searchValue}) => {
   )
 }
 
+const Notification = ({ message, color }) => {
+  const notificationStyle={
+    color: (color ? 'green' : 'red'),
+    background: 'lightgrey',
+    fontSize: 20,
+    borderStyle: 'solid',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10
+  }
+
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className="error" style={notificationStyle}>
+      {message}
+    </div>
+  )
+}
+
 const App = () => {
   const [persons, setPersons] = useState([]) 
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchValue, setSeachValue] = useState('')
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [errorColor, setErrorColor] = useState(false)
 
   useEffect(() => {
     personService
@@ -78,24 +102,42 @@ const App = () => {
 
         personService.update(personId, personObject)
         .then(response => {
+          let name=response.name
           setPersons(persons.map(person => person.id != personId ? person : response ))
           setNewName('')
           setNewNumber('')
+          setErrorColor(true)
+          setErrorMessage('Updated ' + name)
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
         })
         .catch(error => {
-          alert(
-            `${newName} was already deleted from server`
-          )
+          setErrorColor(false)
+          setErrorMessage('Information of ' + newName + ' has already been removed from server')
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
           setPersons(persons.filter(person => person.id !== id))
+          setNewName('')
+          setNewNumber('')
         })
       }
     }
     else {
       personService.create(personObject)
       .then(response => {
+        let name=response.name
+        console.log(name)
         setPersons(persons.concat(response))
-        console.log(response)}
-        )
+        console.log(response)
+        setErrorColor(true)
+        setErrorMessage('Added ' + name)
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+      }
+      )
       setNewName('')
       setNewNumber('')
     }
@@ -107,9 +149,15 @@ const App = () => {
     if (confirm(`delete ${personName}?`)){
       personService.deletePerson(id).then(
         response => {
+          name=response.name
           console.log(response)
           const newPersons = persons.filter(person => person.id != response.id)
           setPersons(newPersons)
+          setErrorColor(true)
+          setErrorMessage('Deleted ' + name)
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
         }
       )
     }
@@ -118,6 +166,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={errorMessage} color={errorColor}/>
       <Filter handleSearchChange={handleSeachChange} searchValue={searchValue}/>
       <NewPersonForm 
         addNewPerson={addNewPerson} newName={newName} handleNameChange={handleNameChange} newNumber={newNumber} handleNumberChange={handleNumberChange} 
