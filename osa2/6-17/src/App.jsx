@@ -127,6 +127,8 @@ const App = () => {
     else {
       personService.create(personObject)
       .then(response => {
+        console.log('response:')
+        console.log(response)
         let name=response.name
         console.log(name)
         setPersons(persons.concat(response))
@@ -154,7 +156,7 @@ const App = () => {
           const newPersons = persons.filter(person => person.id != response.id)
           setPersons(newPersons)
           setErrorColor(true)
-          setErrorMessage('Deleted ' + name)
+          setErrorMessage('Deleted ' + personName)
           setTimeout(() => {
             setErrorMessage(null)
           }, 5000)
