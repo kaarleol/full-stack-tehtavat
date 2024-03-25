@@ -140,6 +140,15 @@ const App = () => {
         }, 5000)
       }
       )
+      .catch(error => {
+        setErrorColor(false)
+        setErrorMessage(error.response.data.error)
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+        setNewName('')
+        setNewNumber('')
+      })
       setNewName('')
       setNewNumber('')
     }
@@ -148,20 +157,28 @@ const App = () => {
   const deletePersonWithId = id => {
     const person = persons.find(person => person.id === id )
     const personName = person.name
-    if (confirm(`delete ${personName}?`)){
-      personService.deletePerson(id).then(
-        response => {
-          name=response.name
-          console.log(response)
-          const newPersons = persons.filter(person => person.id != response.id)
-          setPersons(newPersons)
-          setErrorColor(true)
-          setErrorMessage('Deleted ' + personName)
-          setTimeout(() => {
-            setErrorMessage(null)
-          }, 5000)
-        }
-      )
+    if (confirm(`Delete ${personName}?`)) {
+      personService.deletePerson(id)
+        .then(response => {
+          if (response) {
+            const newPersons = persons.filter(person => person.id !== id);
+            setPersons(newPersons);
+            setErrorColor(true);
+            setErrorMessage(`Deleted ${personName}`);
+            setTimeout(() => {
+              setErrorMessage(null);
+            }, 5000);
+          } else {
+            setErrorColor(false)
+            setErrorMessage(`Error deleting ${personName}`)
+            setTimeout(() => {
+              setErrorMessage(null)
+            }, 5000)
+          }
+        })
+        .catch(error => {
+          console.error('Error deleting person:', error);
+        })
     }
   }
 

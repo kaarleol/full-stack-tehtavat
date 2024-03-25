@@ -1,5 +1,5 @@
 import axios from 'axios'
-const baseUrl = '/api/persons'
+const baseUrl = '/api/people'
 
 const getAll = () => {
   const request = axios.get(baseUrl)
@@ -18,7 +18,13 @@ const update = (id, newObject) => {
 
 const deletePerson = (id) => {
     const request = axios.delete(`${baseUrl}/${id}`)
-    return request.then(response => response.data)
+    return request.then(response => {
+      if (response.status === 204) {
+        return true
+      } else {
+        return response.data
+      }
+    })
   }
 
 export default { getAll, create, update, deletePerson }
